@@ -17,5 +17,7 @@
       "ServiceOrder": 2
     }
   ],
-  "ServicesDir": "D:\\3bood\\Work-Projects\\ABP\\microservice\\eShopOnAbp-main\\services"
+  "MigratorName": "Intial",
+  "ServicesDir": "D:\\3bood\\Work-Projects\\ABP\\microservice\\eShopOnAbp-main\\services",
+  "DbMigratorDir": "D:\\3bood\\Work-Projects\\ABP\\microservice\\eShopOnAbp-main\\shared\\EShopOnAbp.Keycloak.DbMigrator"
 }

@@ -1,4 +1,5 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Drawing;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text.Json;
 
@@ -7,20 +8,6 @@ while (true)
     var appDir = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
     if (Directory.Exists(appDir)) //return message here check this
     {
-        ConsoleWriteLine(1, ConsoleColor.Blue, "----Abp Migration Tool----");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "1- Add migration only after delete old migration.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "2- Add migration with database update after delete old migration.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "3- Delete migration only.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "4- Run shared migration.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "5- Run services seed.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "6- Run all operations.");
-        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "7- Exit.");
-
-        ConsoleWriteLine(0, ConsoleColor.Cyan, "Command Number: ");
-        var menuInput = Console.ReadLine();
-        ConsoleWriteLine(2, ConsoleColor.White, string.Empty);
-
-
         string appName = "abpMigrationTool"; //app folder name
         string fileName = "Settings.json"; //seed URLs json file
         var jsonFileDir = Path.GetFullPath(Path.Combine(appDir, @"..\..\..\", fileName));
@@ -31,19 +18,30 @@ while (true)
         {
             if (Directory.Exists(settings.ServicesDir))
             {
+                ConsoleWriteLine(1, ConsoleColor.Blue, "----Abp Migration Tool----");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "1- Add migration only after delete old migration.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "2- Add migration with database update after delete old migration.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "3- Delete migration only.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "4- Run shared migration.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "5- Run services seed.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "6- Update database Only.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "7- Run all operations.");
+                ConsoleWriteLine(1, ConsoleColor.DarkYellow, "8- Exit.");
 
-
+                ConsoleWriteLine(0, ConsoleColor.Cyan, "Command Number: ");
+                var menuInput = Console.ReadLine();
+                ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
 
                 bool
                     addMigration,
                     databaseUpdate,
                     sharedDbMigrator,
-                    deleteOnly,
+                    deleteMigration,
                     servicesSeed;
 
                 addMigration =
                     databaseUpdate =
-                    deleteOnly =
+                    deleteMigration =
                     sharedDbMigrator =
                     servicesSeed =
                     false;
@@ -51,14 +49,16 @@ while (true)
                 switch (menuInput)
                 {
                     case "1":
+                        deleteMigration = true;
                         addMigration = true;
                         break;
                     case "2":
+                        deleteMigration = true;
                         addMigration = true;
                         databaseUpdate = true;
                         break;
                     case "3":
-                        deleteOnly = true;
+                        deleteMigration = true;
                         break;
                     case "4":
                         sharedDbMigrator = true;
@@ -67,75 +67,72 @@ while (true)
                         servicesSeed = true;
                         break;
                     case "6":
+                        databaseUpdate = true;
+                        break;
+                    case "7":
+                        deleteMigration = true;
                         addMigration = true;
                         databaseUpdate = true;
                         sharedDbMigrator = true;
                         servicesSeed = true;
                         break;
-                    case "7":
+                    case "8":
                         Environment.Exit(0);
                         break;
                     default:
-                        ConsoleWriteLine(1, ConsoleColor.Red, "Input not valid");
-                        ConsoleWriteLine(3, ConsoleColor.White, "");
+                        CustomMessage("Input not valid", ConsoleColor.Red, false);
                         continue;
                 }
 
-
-
-                var servicesDir = settings.ServicesDir; 
+                var servicesDir = settings.ServicesDir;
                 var servicesDirList = Directory.GetDirectories(servicesDir);
 
-                if (addMigration || deleteOnly)
+                if (deleteMigration || addMigration || databaseUpdate)
                 {
-                    foreach (var serviceDir in servicesDirList)
+                    foreach (var serviceDir in servicesDirList.Where(serviceDir => !serviceDir.Contains(appName)))//exclude App Name
                     {
-                        if (!serviceDir.Contains(appName)) //exclude app name
+                        var serviceFolderList = Directory.GetDirectories(serviceDir);
+                        var serviceFolder = serviceFolderList.FirstOrDefault(serviceFolder => serviceFolder.Contains("\\src"));
+                        if (Directory.Exists(serviceFolder))
                         {
-                            var serviceFolderList = Directory.GetDirectories(serviceDir);
-                            foreach (var serviceFolder in serviceFolderList)
+                            var projectsDirList = Directory.GetDirectories(serviceFolder);
+                            var projectDir = projectsDirList.FirstOrDefault(projectDir => projectDir.Contains(".EntityFrameworkCore"));
+                            if (Directory.Exists(projectDir))
                             {
-                                if (serviceFolder.Contains("\\src"))
+                                ConsoleWriteLine(1, ConsoleColor.Cyan, $"Current Service Name : {serviceDir.Split("\\").Last()}");
+                                if (deleteMigration)
                                 {
-                                    var projectsDirList = Directory.GetDirectories(serviceFolder);
-                                    foreach (var projectDir in projectsDirList)
+                                    var projectFolderList = Directory.GetDirectories(projectDir);
+                                    ConsoleWriteLine(1, ConsoleColor.Magenta, "Checking Migration Folder....");
+                                    var projectFolder = projectFolderList.FirstOrDefault(projectFolder => projectFolder.Contains("Migrations"));
+                                    if (Directory.Exists(projectFolder))
                                     {
-                                        if (projectDir.Contains(".EntityFrameworkCore"))
+                                        //projectFolder => Migration Folder
+                                        //projectDir => EntityFrameworkCore Folder
+                                        if (Directory.Exists(projectFolder))
                                         {
-                                            var serviceSplitDir = serviceDir.Split("\\");
-                                            ConsoleWriteLine(1, ConsoleColor.Cyan, $"Current Service Name : {serviceSplitDir.Last()}");
-                                            var projectFolderList = Directory.GetDirectories(projectDir);
-
-                                            ConsoleWriteLine(1, ConsoleColor.Magenta, "Checking Migration Folder....");
-
-                                            foreach (var projectFolder in projectFolderList)
-                                            {
-                                                if (projectFolder.Contains("Migrations"))
-                                                {
-                                                    //projectFolder => Migration Folder
-                                                    //projectDir => EntityFrameworkCore Folder
-                                                    if (Directory.Exists(projectFolder))
-                                                    {
-                                                        Directory.Delete(projectFolder, true);
-                                                        ConsoleWriteLine(1, ConsoleColor.Green, "Migration Folder Deleted.");
-                                                    }
-                                                }
-                                            }
-                                            if (addMigration)
-                                            {
-                                                ConsoleWriteLine(1, ConsoleColor.Magenta, "Adding Migration....");
-                                                RunCmdCommand(projectDir, "dotnet ef migrations add Initial");
-                                            }
-                                            ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
-                                            if (databaseUpdate)
-                                            {
-                                                ConsoleWriteLine(1, ConsoleColor.Magenta, "Updating Database....");
-                                                RunCmdCommand(projectDir, "dotnet ef database update");
-                                            }
-                                            ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
-
+                                            Directory.Delete(projectFolder, true);
+                                            ConsoleWriteLine(1, ConsoleColor.Green, "Migration Folder Deleted.");
                                         }
                                     }
+                                    else
+                                    {
+                                        ConsoleWriteLine(1, ConsoleColor.DarkYellow, "No Migration Folder Found.");
+                                        ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
+                                    }
+                                }
+                                if (addMigration)
+                                {
+                                    ConsoleWriteLine(1, ConsoleColor.Magenta, "Adding Migration....");
+                                    RunCmdCommand(projectDir, $"dotnet ef migrations add {settings.MigratorName}");
+                                    ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
+                                }
+
+                                if (databaseUpdate)
+                                {
+                                    ConsoleWriteLine(1, ConsoleColor.Magenta, "Updating Database....");
+                                    RunCmdCommand(projectDir, "dotnet ef database update");
+                                    ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
                                 }
                             }
                         }
@@ -143,22 +140,13 @@ while (true)
                 }
                 if (sharedDbMigrator)
                 {
-                    var projectFoldersDir = Path.GetFullPath(Path.Combine(appDir, @"..\..\..\..\..\")); //return navigation back to sharedDbMigrator dir
-                    var projectFolderDirList = Directory.GetDirectories(projectFoldersDir);
-
-                    foreach (var projectFolderDir in projectFolderDirList)
+                    if (Directory.Exists(settings.DbMigratorDir))
                     {
-                        if (projectFolderDir.Contains("\\shared"))
-                        {
-                            var sharedDirList = Directory.GetDirectories(projectFolderDir);
-                            foreach (var sharedDir in sharedDirList)
-                            {
-                                if (sharedDir.Contains(".DbMigrator"))
-                                {
-                                    RunCmdCommand(sharedDir, "dotnet run");
-                                }
-                            }
-                        }
+                        RunCmdCommand(settings.DbMigratorDir, "dotnet run");
+                    }
+                    else
+                    {
+                        ConsoleWriteLine(1, ConsoleColor.Red, "\nDbMigrator directory is not valid.... Press any key to back to menu.");
                     }
                     ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
                 }
@@ -167,36 +155,33 @@ while (true)
                     await RunSeeds(settings);
                     ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
                 }
-
-                ConsoleWriteLine(1, ConsoleColor.Green, "\nTask ended.... Press any key to back to menu.");
-                Console.ReadLine();
-                ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
+                CustomMessage("\nTask ended.... Press any key to back to menu.", ConsoleColor.Green, true);                
             }
             else
             {
-                ConsoleWriteLine(1, ConsoleColor.Red, "\nServices directory is not valid.... Press any key to back to menu.");
-                Console.ReadLine();
-                ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
+                CustomMessage("\nServices directory is not valid.... Press any key to back to menu.", ConsoleColor.Red, true);                
             }
         }
         else
         {
-            ConsoleWriteLine(1, ConsoleColor.Red, "\nCan not read Settings.json or file missing.... Press any key to back to menu.");
-            Console.ReadLine();
-            ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
+            CustomMessage("\nCan not read Settings.json or file missing.... Press any key to back to menu.", ConsoleColor.Red, true);            
         }
     }
     else
     {
-        ConsoleWriteLine(1, ConsoleColor.Red, "\nFolders dir not Found.... Press any key to back to menu.");
-        Console.ReadLine();
-        ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
+        CustomMessage("\nFolders dir not Found.... Press any key to back to menu.", ConsoleColor.Red, true);       
     }
 
 }
 
-
-
+string? CustomMessage(string message,ConsoleColor color,bool wait)
+{
+    string? reply = string.Empty;
+    ConsoleWriteLine(1, color, message);
+    if (wait) { reply=Console.ReadLine(); }
+    ConsoleWriteLine(3, ConsoleColor.White, string.Empty);
+    return reply;
+}
 
 async Task<bool> RunSeeds(Settings settings)
 { 
@@ -213,6 +198,8 @@ async Task<bool> RunSeeds(Settings settings)
                 if (state)
                 {
                     ConsoleWriteLine(1, ConsoleColor.Green, $"Seeding Service : {seedUrl.ServiceName} completed.");
+                    ConsoleWriteLine(1, ConsoleColor.White, string.Empty);
+                    Thread.Sleep(2000);
                     continue;
                 }
                 else
@@ -238,6 +225,7 @@ async Task<bool> WebClient(string url,string token="")
         using (var client = new HttpClient())
         {
             client.DefaultRequestHeaders.Authorization=AuthenticationHeaderValue.Parse($"bearer {token}");
+            client.Timeout= TimeSpan.FromSeconds(10);
             var response = await client.PostAsync(url, null);
             if (response.IsSuccessStatusCode)
             {
@@ -303,5 +291,7 @@ public class Settings
 {
     public string? Token { get; set; }
     public List<SeedURL>? SeedURLs { get; set; }
+    public string? MigratorName { get; set; }
     public string? ServicesDir { get; set; }
+    public string? DbMigratorDir { get; set; }
 }
