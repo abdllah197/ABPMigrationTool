@@ -3,6 +3,7 @@ A simple console tool with a menu to do some operations on ABP microservices Ent
 It has Setting.json.
 Nice colors.
 And very simple.
+just remove ".sample" from settings.json and edit it as you whish
 ![1](https://github.com/abdllah197/ABPMigrationTool/assets/66393459/d13caa4e-1c8b-49af-bb7f-e2cb2ee27dab)
 
 ![2](https://github.com/abdllah197/ABPMigrationTool/assets/66393459/5f169774-fc6f-4620-8236-13ee3735fed5)
