@@ -1,0 +1,18 @@
+{
+  "Token": "",
+  "SeedURLs": [
+    {
+      "ServiceName": "Servicetest1",
+      "URL": "https://localhost:xxxx/api/someThing/seed",
+      "ServiceOrder": 2
+    },
+    {
+      "ServiceName": "Servicetest2",
+      "URL": "https://localhost:xxxx/api/someThing/seed",
+      "ServiceOrder": 1
+    }
+  ],
+  "MigratorName": "Intial",
+  "ServicesDir": "",
+  "DbMigratorDir": ""
+}
